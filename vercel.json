@@ -1,1 +1,1 @@
-{"buildCommand":"npm install && npm run build","outputDirectory":"build"}
+{"buildCommand":"npm install && npm run build","outputDirectory":"build","rootDirectory":"."}
