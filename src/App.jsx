@@ -1192,8 +1192,7 @@ function Calendario({ data, update }) {
         `DTSTART;VALUE=DATE:${d}`,
         `DTEND;VALUE=DATE:${nextDay}`,
         `SUMMARY:${typeLabel}: ${ev.title}`,
-        ev.notes?`DESCRIPTION:${ev.notes.replace(/
-/g,"\n")}`:"DESCRIPTION:",
+        ev.notes?`DESCRIPTION:${ev.notes.replace(/\r?\n/g,"\\n")}`:"DESCRIPTION:",
         `CATEGORIES:${typeLabel}`,
         "END:VEVENT"
       );
