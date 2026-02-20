@@ -843,85 +843,150 @@ function Pipeline({ data, setModal, setSelected, update }) {
 // ---- TAREFAS ----
 function Tarefas({ data, update }) {
   const [show, setShow] = useState(false);
+  const [projFiltro, setProjFiltro] = useState("todos");
   const [dragging, setDragging] = useState(null);
+  const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
+  const PHASE_COLORS = { "Imersão":COLORS.blue, "Estratégia":COLORS.accent, "Criação":COLORS.yellow, "Refinamento":COLORS.green, "Entrega":COLORS.textMuted };
 
-  const todoTasks   = data.tasks.filter(t => !t.done && !t.inProgress);
-  const inProgTasks = data.tasks.filter(t => !t.done && t.inProgress);
-  const doneTasks   = data.tasks.filter(t => t.done);
-
-  const moveTask = (taskId, col) => {
-    update(d => ({
-      ...d,
-      tasks: d.tasks.map(t => t.id !== taskId ? t : {
-        ...t,
-        done: col === "done",
-        inProgress: col === "progress",
-      })
-    }));
+  const moveTask = (taskId, status) => {
+    update(d => ({ ...d, tasks: d.tasks.map(t => t.id !== taskId ? t : { ...t, status, done: status==="done" }) }));
   };
 
-  const KanbanCol = ({ title, tasks, colId, color, icon }) => (
+  const projetos = [
+    { id:"todos", name:"Todos os Projetos" },
+    ...data.projects.filter(p=>p.status==="Em andamento"),
+    { id:"sem-projeto", name:"Sem Projeto" },
+  ];
+
+  const tarefasFiltradas = projFiltro === "todos"
+    ? data.tasks
+    : projFiltro === "sem-projeto"
+    ? data.tasks.filter(t => !t.projectId)
+    : data.tasks.filter(t => t.projectId === projFiltro);
+
+  const TaskCard = ({ t, showPhase }) => {
+    const proj = data.projects.find(p => p.id === t.projectId);
+    const late = isOverdue(t.due);
+    const status = t.status || (t.done ? "done" : t.inProgress ? "progress" : "todo");
+    return (
+      <div
+        draggable
+        onDragStart={() => setDragging(t.id)}
+        style={{ background:COLORS.bg, border:`1px solid ${late?COLORS.red:COLORS.border}`, borderRadius:10, padding:"12px 14px", cursor:"grab", marginBottom:8 }}
+      >
+        <div style={{ fontWeight:600, fontSize:13, marginBottom:6, color:status==="done"?COLORS.textDim:COLORS.text, textDecoration:status==="done"?"line-through":"none" }}>{t.title}</div>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
+          {showPhase && t.phase && <Badge label={t.phase} color={PHASE_COLORS[t.phase]||COLORS.accent} bg={(PHASE_COLORS[t.phase]||COLORS.accent)+"22"} />}
+          {projFiltro==="todos" && proj && <Badge label={proj.name} color={COLORS.accent} bg={COLORS.accentDim} />}
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          {t.due && <span style={{ fontSize:11, color:late?COLORS.red:COLORS.textDim }}>{late?"⚠ ":""}{fmt(t.due)}</span>}
+          <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+        </div>
+        <div style={{ display:"flex", gap:4, marginTop:8 }}>
+          {status!=="todo"     && <button onClick={()=>moveTask(t.id,"todo")}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.border, border:"none", color:COLORS.textMuted, cursor:"pointer", fontFamily:"inherit" }}>← A Fazer</button>}
+          {status!=="progress" && <button onClick={()=>moveTask(t.id,"progress")} style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.yellowDim, border:"none", color:COLORS.yellow, cursor:"pointer", fontFamily:"inherit" }}>→ Em Progresso</button>}
+          {status!=="done"     && <button onClick={()=>moveTask(t.id,"done")}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.greenDim, border:"none", color:COLORS.green, cursor:"pointer", fontFamily:"inherit" }}>✓ Feito</button>}
+        </div>
+      </div>
+    );
+  };
+
+  const KanbanCol = ({ title, tasks, colId, color, icon, showPhase }) => (
     <div
-      style={{ flex:1, minWidth:220, background:COLORS.surface, borderRadius:14, padding:16, border:`1px solid ${COLORS.border}`, minHeight:400 }}
+      style={{ flex:1, minWidth:220, background:COLORS.surface, borderRadius:14, padding:16, border:`1px solid ${COLORS.border}`, minHeight:300 }}
       onDragOver={e=>e.preventDefault()}
       onDrop={e=>{ e.preventDefault(); if(dragging) moveTask(dragging, colId); setDragging(null); }}
     >
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-        <span style={{ fontSize:16 }}>{icon}</span>
+        <span>{icon}</span>
         <span style={{ fontWeight:700, fontSize:14, color }}>{title}</span>
         <span style={{ marginLeft:"auto", background:color+"22", color, borderRadius:99, fontSize:11, fontWeight:700, padding:"2px 8px" }}>{tasks.length}</span>
       </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-        {tasks.length===0 && <div style={{ textAlign:"center", padding:24, color:COLORS.textDim, fontSize:12, border:`1px dashed ${COLORS.border}`, borderRadius:10 }}>Arraste tarefas aqui</div>}
-        {tasks.map(t => {
-          const proj = data.projects.find(p => p.id === t.projectId);
-          const late = isOverdue(t.due);
+      {tasks.length===0 && <div style={{ textAlign:"center", padding:24, color:COLORS.textDim, fontSize:12, border:`1px dashed ${COLORS.border}`, borderRadius:10 }}>Vazio</div>}
+      {tasks.map(t => <TaskCard key={t.id} t={t} showPhase={showPhase} />)}
+    </div>
+  );
+
+  const VisaoProjeto = ({ projectId }) => {
+    const proj = data.projects.find(p => p.id === projectId);
+    const tarefas = projectId === "sem-projeto"
+      ? data.tasks.filter(t => !t.projectId)
+      : data.tasks.filter(t => t.projectId === projectId);
+    const fasesComTarefas = PHASES.filter(f => tarefas.some(t => t.phase === f));
+    const semFase = tarefas.filter(t => !t.phase);
+    return (
+      <div>
+        {proj && (
+          <div style={{ marginBottom:20, padding:"12px 16px", background:COLORS.surface, borderRadius:12, border:`1px solid ${COLORS.border}`, display:"flex", gap:16, alignItems:"center" }}>
+            <div style={{ width:40, height:40, borderRadius:10, background:COLORS.accentDim, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:800, color:COLORS.accent }}>{proj.name[0]}</div>
+            <div>
+              <div style={{ fontWeight:700, fontSize:15 }}>{proj.name}</div>
+              <div style={{ fontSize:12, color:COLORS.textMuted }}>{proj.client} · {proj.status} · {tarefas.filter(t=>t.status==="done"||t.done).length}/{tarefas.length} tarefas concluídas</div>
+            </div>
+          </div>
+        )}
+        {fasesComTarefas.map(fase => {
+          const tf = tarefas.filter(t => t.phase === fase);
+          const todo = tf.filter(t => (t.status||"todo")==="todo");
+          const prog = tf.filter(t => (t.status||"todo")==="progress");
+          const done = tf.filter(t => (t.status||"todo")==="done"||t.done);
           return (
-            <div
-              key={t.id}
-              draggable
-              onDragStart={() => setDragging(t.id)}
-              style={{ background:COLORS.bg, border:`1px solid ${late?COLORS.red:COLORS.border}`, borderRadius:10, padding:"12px 14px", cursor:"grab", transition:"all 0.15s" }}
-            >
-              <div style={{ fontWeight:600, fontSize:13, marginBottom:6, color:t.done?COLORS.textDim:COLORS.text, textDecoration:t.done?"line-through":"none" }}>{t.title}</div>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:6, flexWrap:"wrap" }}>
-                <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                  {proj && <Badge label={proj.name} color={COLORS.accent} bg={COLORS.accentDim} />}
-                </div>
-                <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                  {t.due && <span style={{ fontSize:11, color:late?COLORS.red:COLORS.textDim }}>{late?"⚠ ":""}{fmt(t.due)}</span>}
-                  <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+            <div key={fase} style={{ marginBottom:24 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+                <div style={{ width:10, height:10, borderRadius:"50%", background:PHASE_COLORS[fase]||COLORS.accent }} />
+                <span style={{ fontWeight:700, fontSize:14, color:PHASE_COLORS[fase]||COLORS.accent }}>{fase}</span>
+                <span style={{ fontSize:12, color:COLORS.textDim }}>{done.length}/{tf.length} concluídas</span>
+                <div style={{ flex:1, height:3, background:COLORS.border, borderRadius:2, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${tf.length>0?Math.round((done.length/tf.length)*100):0}%`, background:PHASE_COLORS[fase]||COLORS.accent, borderRadius:2 }} />
                 </div>
               </div>
-              {/* Quick move buttons */}
-              <div style={{ display:"flex", gap:4, marginTop:8 }}>
-                {colId!=="todo"     && <button onClick={()=>moveTask(t.id,"todo")}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.border, border:"none", color:COLORS.textMuted, cursor:"pointer", fontFamily:"inherit" }}>← A Fazer</button>}
-                {colId!=="progress" && <button onClick={()=>moveTask(t.id,"progress")} style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.yellowDim, border:"none", color:COLORS.yellow, cursor:"pointer", fontFamily:"inherit" }}>→ Em Progresso</button>}
-                {colId!=="done"     && <button onClick={()=>moveTask(t.id,"done")}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.greenDim, border:"none", color:COLORS.green, cursor:"pointer", fontFamily:"inherit" }}>✓ Feito</button>}
+              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                <KanbanCol title="A Fazer" tasks={todo} colId="todo" color={COLORS.textMuted} icon="◻" showPhase={false} />
+                <KanbanCol title="Em Progresso" tasks={prog} colId="progress" color={COLORS.yellow} icon="⚡" showPhase={false} />
+                <KanbanCol title="Feito" tasks={done} colId="done" color={COLORS.green} icon="✓" showPhase={false} />
               </div>
             </div>
           );
         })}
+        {semFase.length > 0 && (
+          <div style={{ marginBottom:24 }}>
+            <div style={{ fontWeight:700, fontSize:13, color:COLORS.textMuted, marginBottom:12 }}>Sem fase definida</div>
+            <div style={{ display:"flex", gap:12 }}>
+              <KanbanCol title="A Fazer" tasks={semFase.filter(t=>(t.status||"todo")==="todo")} colId="todo" color={COLORS.textMuted} icon="◻" showPhase={false} />
+              <KanbanCol title="Em Progresso" tasks={semFase.filter(t=>(t.status||"todo")==="progress")} colId="progress" color={COLORS.yellow} icon="⚡" showPhase={false} />
+              <KanbanCol title="Feito" tasks={semFase.filter(t=>(t.status||"todo")==="done"||t.done)} colId="done" color={COLORS.green} icon="✓" showPhase={false} />
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
         <h1 style={{ margin:0, fontSize:24, fontWeight:800 }}>Tarefas</h1>
         <Btn onClick={()=>setShow(true)}>+ Nova Tarefa</Btn>
       </div>
-      <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-        <KanbanCol title="A Fazer"       tasks={todoTasks}   colId="todo"     color={COLORS.textMuted} icon="◻" />
-        <KanbanCol title="Em Progresso"  tasks={inProgTasks} colId="progress" color={COLORS.yellow}    icon="⚡" />
-        <KanbanCol title="Feito"         tasks={doneTasks}   colId="done"     color={COLORS.green}     icon="✓" />
+      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+        {projetos.map(p => (
+          <button key={p.id} onClick={()=>setProjFiltro(p.id)} style={{ padding:"8px 16px", borderRadius:99, border:`1px solid ${projFiltro===p.id?COLORS.accent:COLORS.border}`, background:projFiltro===p.id?COLORS.accentDim:"transparent", color:projFiltro===p.id?COLORS.accent:COLORS.textMuted, cursor:"pointer", fontFamily:"inherit", fontWeight:projFiltro===p.id?700:400, fontSize:13, transition:"all 0.15s" }}>{p.name}</button>
+        ))}
       </div>
-      {show&&<TaskModal data={data} onClose={()=>setShow(false)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),done:false,inProgress:false}]}));setShow(false);}} />}
+      {projFiltro === "todos" ? (
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <KanbanCol title="A Fazer" tasks={tarefasFiltradas.filter(t=>(t.status||"todo")==="todo")} colId="todo" color={COLORS.textMuted} icon="◻" showPhase={true} />
+          <KanbanCol title="Em Progresso" tasks={tarefasFiltradas.filter(t=>(t.status||"todo")==="progress")} colId="progress" color={COLORS.yellow} icon="⚡" showPhase={true} />
+          <KanbanCol title="Feito" tasks={tarefasFiltradas.filter(t=>(t.status||"todo")==="done"||t.done)} colId="done" color={COLORS.green} icon="✓" showPhase={true} />
+        </div>
+      ) : (
+        <VisaoProjeto projectId={projFiltro} />
+      )}
+      {show&&<TaskModal data={data} onClose={()=>setShow(false)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:"todo",done:false}]}));setShow(false);}} />}
     </div>
   );
 }
-
 
 // ---- FINANCEIRO ----
 function Financeiro({ data, update, calcReceitaMes }) {
