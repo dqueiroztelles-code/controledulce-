@@ -24,18 +24,33 @@ const CLIENT_TYPE_INFO = {
 };
 
 const STORAGE_KEY = "gestor_freelancer_v3";
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+async function sbFetch(method, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/gestor_data?id=eq.dulce`, {
+    method,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": method === "POST" ? "resolution=merge-duplicates" : "return=minimal",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res;
+}
 async function loadData() {
-  // Try v3 first, fallback to v2
   try {
-    const r = await window.storage.get(STORAGE_KEY);
-    if (r) return JSON.parse(r.value);
-    const old = await window.storage.get("gestor_freelancer_v2");
-    if (old) return { ...defaultData(), ...JSON.parse(old.value) };
+    const res = await sbFetch("GET");
+    const rows = await res.json();
+    if (rows && rows.length > 0) return rows[0].data;
     return null;
   } catch { return null; }
 }
 async function saveData(data) {
-  try { await window.storage.set(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  try {
+    await sbFetch("POST", { id: "dulce", data, updated_at: new Date().toISOString() });
+  } catch {}
 }
 const defaultData = () => {
   const clients = [
