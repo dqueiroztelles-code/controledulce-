@@ -394,7 +394,7 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
 
       {/* KPIs topo */}
       <div style={{ display:"flex", gap:14, marginBottom:24, flexWrap:"wrap" }}>
-        {stat("Recorrente Mensal", `R$ ${fmtMoney(recorrente+receitaMes)}`, COLORS.green, "Baby Home + entregas do mês")}
+        {stat("Recorrente Mensal", `R$ ${fmtMoney(receitaMes)}`, COLORS.green, "Baby Home + entregas do mês")}
         {stat("Contratos Ativos", `R$ ${fmtMoney(totalContratado)}`, COLORS.accent, "Ruian + Colorato + Franccico")}
         {stat("Já Recebido", `R$ ${fmtMoney(totalRecebido)}`, COLORS.blue, "dos contratos fechados")}
         {stat("Ainda a Receber", `R$ ${fmtMoney(totalPendenteProjetos)}`, COLORS.yellow, "saldo dos contratos")}
