@@ -380,13 +380,25 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
   const now2 = new Date();
   const mesAtual = now2.getMonth();
   const anoAtual = now2.getFullYear();
+  const proxMes = mesAtual === 11 ? 0 : mesAtual + 1;
+  const proxAno = mesAtual === 11 ? anoAtual + 1 : anoAtual;
   const todasParcelas = data.clients.flatMap(c => (c.parcelas_det || []).map(p => ({...p, clientName: c.name})));
   const parcelasMes = todasParcelas.filter(p => {
     if (!p.vencimento) return false;
     const d = new Date(p.vencimento + "T00:00:00");
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   });
+  const parcelasProxMes = todasParcelas.filter(p => {
+    if (!p.vencimento) return false;
+    const d = new Date(p.vencimento + "T00:00:00");
+    return d.getMonth() === proxMes && d.getFullYear() === proxAno;
+  });
   const previstoMes = parcelasMes.reduce((a, p) => a + (p.valor || 0), 0);
+  const previstoProxMes = parcelasProxMes.reduce((a, p) => a + (p.valor || 0), 0);
+  const nomeMesAtual = now2.toLocaleDateString("pt-BR",{month:"short"}).replace(".","").charAt(0).toUpperCase() + now2.toLocaleDateString("pt-BR",{month:"short"}).replace(".","").slice(1);
+  const nomeProxMes = new Date(proxAno, proxMes, 1).toLocaleDateString("pt-BR",{month:"short"}).replace(".","").charAt(0).toUpperCase() + new Date(proxAno, proxMes, 1).toLocaleDateString("pt-BR",{month:"short"}).replace(".","").slice(1);
+  const labelMesAtual = parcelasMes.map(p=>p.clientName).filter((v,i,a)=>a.indexOf(v)===i).join(" + ") || "sem vencimentos";
+  const labelProxMes = parcelasProxMes.map(p=>p.clientName).filter((v,i,a)=>a.indexOf(v)===i).join(" + ") || "sem vencimentos";
   const previstoPago = parcelasMes.filter(p => p.pago).reduce((a, p) => a + (p.valor || 0), 0);
   const previstoPendente = previstoMes - previstoPago;
   const previstoPagoCount = parcelasMes.filter(p => p.pago).length;
@@ -439,7 +451,8 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
 
       {/* KPIs topo */}
       <div style={{ display:"flex", gap:14, marginBottom:24, flexWrap:"wrap" }}>
-        {stat("Previsto este mês", `R$ ${fmtMoney(previstoMes)}`, COLORS.green, previstoLabel)}
+        {stat(`Previsto ${nomeMesAtual}`, `R$ ${fmtMoney(previstoMes)}`, COLORS.green, labelMesAtual)}
+        {stat(`Previsto ${nomeProxMes}`, `R$ ${fmtMoney(previstoProxMes)}`, COLORS.blue, labelProxMes)}
         {stat("Contratos Ativos", `R$ ${fmtMoney(totalContratado)}`, COLORS.accent, "total contratado")}
         {stat("Já Recebido", `R$ ${fmtMoney(totalRecebido)}`, COLORS.blue, "dos contratos fechados")}
         {stat("Ainda a Receber", `R$ ${fmtMoney(totalPendenteProjetos)}`, COLORS.yellow, "saldo dos contratos")}
