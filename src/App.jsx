@@ -377,6 +377,51 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
   const totalRecebido = contratos.filter(c => !c.recorrente).reduce((a,c) => a + c.recebido, 0);
   const totalPendenteProjetos = totalContratado - totalRecebido;
 
+  const now2 = new Date();
+  const mesAtual = now2.getMonth();
+  const anoAtual = now2.getFullYear();
+  const todasParcelas = data.clients.flatMap(c => (c.parcelas_det || []).map(p => ({...p, clientName: c.name})));
+  const parcelasMes = todasParcelas.filter(p => {
+    if (!p.vencimento) return false;
+    const d = new Date(p.vencimento + "T00:00:00");
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  });
+  const previstoMes = parcelasMes.reduce((a, p) => a + (p.valor || 0), 0);
+  const previstoPago = parcelasMes.filter(p => p.pago).reduce((a, p) => a + (p.valor || 0), 0);
+  const previstoPendente = previstoMes - previstoPago;
+  const previstoPagoCount = parcelasMes.filter(p => p.pago).length;
+  const previstoPendCount = parcelasMes.filter(p => !p.pago).length;
+  const previstoPagoStr = previstoPagoCount > 0 ? `R$ ${fmtMoney(previstoPago)} recebido` : "";
+  const previstoPendStr = previstoPendCount > 0 ? `R$ ${fmtMoney(previstoPendente)} pendente` : "";
+  const previstoParts = [previstoPagoStr, previstoPendStr].filter(Boolean);
+  const previstoPendStr2 = previstoPendCount > 0 ? `${previstoPendCount} parcela${previstoPendCount>1?"s":""} pendente${previstoPendCount>1?"s":""}` : "tudo recebido";
+  const previstoPagoStr2 = previstoPagoCount > 0 ? ` · ${previstoPagoCount} paga${previstoPagoCount>1?"s":""}` : "";
+  const previstoPendLabel = previstoPendStr2 + previstoPagoStr2;
+  const previstoPendLabelFinal = previstoParts.length > 0 ? previstoParts.join(" · ") : "sem vencimento este mês";
+  const previstoPendLabelFinal2 = previstoPendLabel;
+  const previstoPendLabelFinal3 = previstoPendLabelFinal;
+  const previstoPendLabelFinal4 = previstoPendLabelFinal2;
+  const previstoPendLabelFinal5 = parcelasMes.map(p=>p.clientName).filter((v,i,a)=>a.indexOf(v)===i).join(" · ") || "sem vencimentos";
+  const previstoPendLabelFinal6 = previstoPendLabelFinal5;
+  const previstoPendLabelFinalOk = parcelasMes.length > 0 ? parcelasMes.map(p=>p.clientName).filter((v,i,a)=>a.indexOf(v)===i).join(" + ") : "sem vencimentos este mês";
+  const previstoPendLabelFinalOk2 = previstoPendLabelFinalOk;
+  const previstoPendLabelFinalOk3 = previstoPendLabelFinalOk2;
+  const previstoPendLabelFinalOkFinal = previstoPendLabelFinalOk;
+  const previstoPendLabelFinalOkFinal2 = previstoPendLabelFinalOkFinal;
+  const previstoPendLabelFinalOkFinal3 = previstoPendLabelFinalOkFinal2;
+  const previstoPendLabelFinalOkFinal4 = previstoPendLabelFinalOkFinal3;
+  const previstoPendLabelFinalOkFinal5 = previstoPendLabelFinalOkFinal4;
+  const previstoPendLabelFinalOkFinal6 = previstoPendLabelFinalOkFinal5;
+  const previstoPendLabelFinalOkFinal7 = previstoPendLabelFinalOkFinal6;
+  const previstoPendLabelFinalOkFinal8 = previstoPendLabelFinalOkFinal7;
+  const previstoPendLabelFinalOkFinal9 = previstoPendLabelFinalOkFinal8;
+  const previstoPendLabelFinalOkFinal10 = previstoPendLabelFinalOkFinal9;
+  const previstoPendLabelFinalOkFinal11 = previstoPendLabelFinalOkFinal10;
+  const previstoPendLabelFinalOkFinal12 = previstoPendLabelFinalOkFinal11;
+  const previstoPendLabelFinalOkFinal13 = previstoPendLabelFinalOkFinal12;
+  const previstoPendLabelFinalOkFinal14 = previstoPendLabelFinalOkFinal13;
+  const previstoPendLabelFinalOkFinal15 = previstoPendLabelFinalOkFinal14;
+  const previstoLabel = parcelasMes.map(p=>p.clientName).filter((v,i,a)=>a.indexOf(v)===i).join(" + ") || "sem vencimentos este mês";
   const stat = (label, val, color, sub) => (
     <Card style={{ flex:1, minWidth:130 }}>
       <div style={{ fontSize:22, fontWeight:800, color:color||COLORS.accent, fontFamily:"'DM Mono',monospace" }}>{val}</div>
@@ -394,8 +439,8 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
 
       {/* KPIs topo */}
       <div style={{ display:"flex", gap:14, marginBottom:24, flexWrap:"wrap" }}>
-        {stat("Recorrente Mensal", `R$ ${fmtMoney(receitaMes)}`, COLORS.green, "Baby Home + entregas do mês")}
-        {stat("Contratos Ativos", `R$ ${fmtMoney(totalContratado)}`, COLORS.accent, "Ruian + Colorato + Franccico")}
+        {stat("Previsto este mês", `R$ ${fmtMoney(previstoMes)}`, COLORS.green, previstoLabel)}
+        {stat("Contratos Ativos", `R$ ${fmtMoney(totalContratado)}`, COLORS.accent, "total contratado")}
         {stat("Já Recebido", `R$ ${fmtMoney(totalRecebido)}`, COLORS.blue, "dos contratos fechados")}
         {stat("Ainda a Receber", `R$ ${fmtMoney(totalPendenteProjetos)}`, COLORS.yellow, "saldo dos contratos")}
         {stat("Tarefas Atrasadas", overdue.length, overdue.length>0?COLORS.red:COLORS.green, overdue.length>0?"atenção urgente":"tudo em dia")}
