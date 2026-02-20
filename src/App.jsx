@@ -1189,7 +1189,7 @@ function Calendario({ data, update }) {
     const icsLines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Gestão Pro Dulce//PT"
+      "PRODID:-//Gestão Pro Dulce//PT",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
     ];
