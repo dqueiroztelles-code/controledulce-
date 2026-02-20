@@ -1200,7 +1200,7 @@ function Calendario({ data, update }) {
     icsLines.push("END:VCALENDAR");
 
     const blob = new Blob([icsLines.join("
-")], { type:"text/calendar;charset=utf-8" });
+")],{type:"text/calendar"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "gestao-pro-dulce.ics"; a.click();
