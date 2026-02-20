@@ -39,10 +39,10 @@ async function saveData(data) {
 }
 const defaultData = () => {
   const clients = [
-    { id:"c1", name:"Colorato", segment:"Plataforma / Empreendedorismo", email:"", whatsapp:"", notes:"Contrato R$ 7.000 em 3x. 2 parcelas recebidas (ciclo 1). 1 parcela pendente.", type:"Por Ciclo", value:"7000", payment:"PIX", pagoMes:false, cicloFim:"2026-03-15" },
-    { id:"c2", name:"Baby Home", segment:"Educação / Escola", email:"", whatsapp:"", notes:"Mensalidade R$ 5.000/mês + variável conforme entregas.", type:"Fixo", value:"5000", payment:"PIX", pagoMes:false, payDay:1 },
-    { id:"c3", name:"Ruian – ExpoPrint 2026", segment:"Industrial / Feira", email:"", whatsapp:"", notes:"Contrato R$ 50.000 em 3x. 1ª parcela recebida. 2 parcelas pendentes.", type:"Por Ciclo", value:"50000", payment:"PIX", pagoMes:false, cicloFim:"2026-04-01" },
-    { id:"c4", name:"Franccico", segment:"Branding / Narrativa de Marca", email:"", whatsapp:"", notes:"Narrativa de Marca. Contrato fechado.", type:"Por Projeto", value:"12000", payment:"PIX", pagoMes:false },
+    { id:"c1", name:"Colorato", segment:"Plataforma / Empreendedorismo", email:"", whatsapp:"", notes:"Contrato R$ 7.000 em 3x. 2 parcelas recebidas (ciclo 1). 1 parcela pendente.", type:"Por Ciclo", value:"7000", recebido:4667, parcelas:3, pgParcelas:2, payment:"PIX", pagoMes:false, cicloFim:"2026-03-15" },
+    { id:"c2", name:"Baby Home", segment:"Educação / Escola", email:"", whatsapp:"", notes:"Mensalidade R$ 5.000/mês + variável conforme entregas.", type:"Fixo", value:"5000", recebido:0, parcelas:null, pgParcelas:null, payment:"PIX", pagoMes:true, payDay:1 },
+    { id:"c3", name:"Ruian – ExpoPrint 2026", segment:"Industrial / Feira", email:"", whatsapp:"", notes:"Contrato R$ 50.000 em 3x. 1ª parcela recebida. 2 parcelas pendentes.", type:"Por Ciclo", value:"50000", recebido:16667, parcelas:3, pgParcelas:1, payment:"PIX", pagoMes:false, cicloFim:"2026-04-01" },
+    { id:"c4", name:"Franccico", segment:"Branding / Narrativa de Marca", email:"", whatsapp:"", notes:"Narrativa de Marca. Contrato fechado.", type:"Por Projeto", value:"12000", recebido:0, parcelas:1, pgParcelas:0, payment:"PIX", pagoMes:false },
     { id:"c5", name:"Vinícola Góes", segment:"Vinho / Premium", email:"", whatsapp:"", notes:"Negociação avançada. Cláudio Góes.", type:"Por Projeto", value:"", payment:"PIX", pagoMes:false },
   ];
   const projects = [
@@ -361,8 +361,8 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
     .filter(c => data.projects.some(p => p.client === c.name && p.status === "Em andamento"))
     .map(c => {
       const total = parseFloat(c.value) || 0;
-      const recebido = c.type === "Fixo" ? (c.pagoMes ? total : 0) : c.type === "Por Ciclo" ? (c.pagoMes ? Math.round(total/3) : 0) : 0;
-      const pagas = c.type !== "Fixo" ? (c.pagoMes ? 1 : 0) : null;
+      const recebido = c.recebido || 0;
+      const pagas = c.pgParcelas ?? null;
       return {
         nome: c.name,
         total,
