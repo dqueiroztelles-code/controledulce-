@@ -388,7 +388,7 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
   return (
     <div>
       <div style={{ marginBottom:24 }}>
-        <h1 style={{ margin:0, fontSize:26, fontWeight:800 }}>Bom dia, Dulce 👋</h1>
+        <h1 style={{ margin:0, fontSize:26, fontWeight:800 }}>{new Date().getHours()<12?"Bom dia":new Date().getHours()<18?"Boa tarde":"Boa noite"}, Dulce 👋</h1>
         <div style={{ color:COLORS.textMuted, marginTop:4, fontSize:14 }}>{new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</div>
       </div>
 
