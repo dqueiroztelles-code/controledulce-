@@ -1199,8 +1199,7 @@ function Calendario({ data, update }) {
     });
     icsLines.push("END:VCALENDAR");
 
-    const blob = new Blob([icsLines.join("
-")],{type:"text/calendar"});
+    const blob = new Blob([icsLines.join("\r\n")],{type:"text/calendar"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "gestao-pro-dulce.ics"; a.click();
