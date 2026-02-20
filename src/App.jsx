@@ -322,7 +322,7 @@ export default function App() {
       {modal==="new-project"   && <ProjectModal data={data} onClose={()=>setModal(null)} onSave={p=>{update(d=>({...d,projects:[...d.projects,{...p,id:uid(),createdAt:new Date().toISOString()}]}));setModal(null);}} />}
       {modal==="edit-project"  && selected && <ProjectModal data={data} initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={p=>{update(d=>({...d,projects:d.projects.map(x=>x.id===selected.id?{...x,...p}:x)}));setModal(null);setSelected(null);}} />}
       {modal==="new-client"    && <ClientModal onClose={()=>setModal(null)} onSave={c=>{update(d=>({...d,clients:[...d.clients,{...c,id:uid()}]}));setModal(null);}} />}
-      {modal==="edit-client"   && selected && <ClientModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={c=>{update(d=>({...d,clients:d.clients.map(x=>x.id===selected.id?{...x,...c}:x)}));setModal(null);setSelected(null);}} />}
+      {modal==="edit-client"   && selected && <ClientModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={c=>{update(d=>({...d,clients:d.clients.map(x=>x.id===selected.id?{...x,...c}:x),projects:d.projects.map(x=>x.client===selected.name?{...x,client:c.name}:x),pipeline:d.pipeline.map(x=>x.client===selected.name?{...x,client:c.name}:x)}));setModal(null);setSelected(null);}} />}
       {modal==="new-pipeline"  && <PipelineModal onClose={()=>setModal(null)} onSave={p=>{update(d=>({...d,pipeline:[...d.pipeline,{...p,id:uid()}]}));setModal(null);}} />}
       {modal==="edit-pipeline" && selected && <PipelineModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={p=>{update(d=>({...d,pipeline:d.pipeline.map(x=>x.id===selected.id?{...x,...p}:x)}));setModal(null);setSelected(null);}} />}
       {modal==="new-task"      && <TaskModal data={data} onClose={()=>setModal(null)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),done:false}]}));setModal(null);}} />}
@@ -356,14 +356,25 @@ function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPa
   const totalPendente = pendentes.reduce((a,p)=>a+p.valor,0);
 
   // Contratos em execução: total contratado vs recebido
-  const contratos = [
-    { nome:"Ruian – ExpoPrint", total:50000, recebido:16667, parcelas:3, pagas:1, cor:COLORS.blue },
-    { nome:"Colorato", total:7000, recebido:4667, parcelas:3, pagas:2, cor:COLORS.accent },
-    { nome:"Franccico", total:12000, recebido:0, parcelas:1, pagas:0, cor:COLORS.yellow },
-    { nome:"Baby Home", total:5000, recebido:recorrente, parcelas:null, pagas:null, cor:COLORS.green, recorrente:true },
-  ];
-  const totalContratado = 50000+7000+12000;
-  const totalRecebido = 16667+4667;
+  const COR_CLIENTE = { c1:COLORS.accent, c2:COLORS.green, c3:COLORS.blue, c4:COLORS.yellow };
+  const contratos = data.clients
+    .filter(c => data.projects.some(p => p.client === c.name && p.status === "Em andamento"))
+    .map(c => {
+      const total = parseFloat(c.value) || 0;
+      const recebido = c.type === "Fixo" ? (c.pagoMes ? total : 0) : c.type === "Por Ciclo" ? (c.pagoMes ? Math.round(total/3) : 0) : 0;
+      const pagas = c.type !== "Fixo" ? (c.pagoMes ? 1 : 0) : null;
+      return {
+        nome: c.name,
+        total,
+        recebido,
+        parcelas: c.type !== "Fixo" ? 3 : null,
+        pagas,
+        cor: COR_CLIENTE[c.id] || COLORS.accent,
+        recorrente: c.type === "Fixo",
+      };
+    });
+  const totalContratado = contratos.filter(c => !c.recorrente).reduce((a,c) => a + c.total, 0);
+  const totalRecebido = contratos.filter(c => !c.recorrente).reduce((a,c) => a + c.recebido, 0);
   const totalPendenteProjetos = totalContratado - totalRecebido;
 
   const stat = (label, val, color, sub) => (
@@ -1178,7 +1189,7 @@ function Calendario({ data, update }) {
     const icsLines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Gestão Pro Dulce//PT",
+      "PRODID:-//Gestão Pro Dulce//PT"
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
     ];
