@@ -1637,7 +1637,7 @@ function ProjectModal({ data, initial, onClose, onSave }) {
 }
 
 function ClientModal({ initial, onClose, onSave }) {
-  const [f,setF]=useState({name:"",segment:"",email:"",whatsapp:"",notes:"",type:"Por Projeto",value:"",payment:"PIX",payDay:"",cicloFim:"",pagoMes:false,...initial});
+  const [f,setF]=useState({name:"",segment:"",email:"",whatsapp:"",notes:"",type:"Por Projeto",value:"",recebido:0,parcelas:1,pgParcelas:0,payment:"PIX",payDay:"",cicloFim:"",pagoMes:false,...initial});
   const set=k=>v=>setF(p=>({...p,[k]:v}));
   return (
     <Modal title={initial?"Editar Cliente":"Novo Cliente"} onClose={onClose}>
@@ -1652,6 +1652,10 @@ function ClientModal({ initial, onClose, onSave }) {
         {f.type==="Fixo"&&<Input label="Dia de Vencimento" value={f.payDay} onChange={set("payDay")} placeholder="Ex: 5" />}
         {f.type==="Por Ciclo"&&<Input label="Fim do Ciclo" value={f.cicloFim} onChange={set("cicloFim")} type="date" />}
       </div>
+      {f.type!=="Fixo"&&<div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+        <Input label="Valor já recebido (R$)" value={f.recebido} onChange={set("recebido")} placeholder="0" />
+        <Input label="Parcelas pagas" value={f.pgParcelas} onChange={set("pgParcelas")} placeholder="0" />
+      </div>}
       <Input label="Email" value={f.email} onChange={set("email")} type="email" />
       <Input label="WhatsApp" value={f.whatsapp} onChange={set("whatsapp")} placeholder="(11) 99999-9999" />
       <Input label="Notas" value={f.notes} onChange={set("notes")} />
