@@ -340,7 +340,7 @@ export default function App() {
       {modal==="edit-client"   && selected && <ClientModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={c=>{update(d=>({...d,clients:d.clients.map(x=>x.id===selected.id?{...x,...c}:x),projects:d.projects.map(x=>x.client===selected.name?{...x,client:c.name}:x),pipeline:d.pipeline.map(x=>x.client===selected.name?{...x,client:c.name}:x)}));setModal(null);setSelected(null);}} />}
       {modal==="new-pipeline"  && <PipelineModal onClose={()=>setModal(null)} onSave={p=>{update(d=>({...d,pipeline:[...d.pipeline,{...p,id:uid()}]}));setModal(null);}} />}
       {modal==="edit-pipeline" && selected && <PipelineModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={p=>{update(d=>({...d,pipeline:d.pipeline.map(x=>x.id===selected.id?{...x,...p}:x)}));setModal(null);setSelected(null);}} />}
-      {modal==="new-task"      && <TaskModal data={data} onClose={()=>setModal(null)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),done:false}]}));setModal(null);}} />}
+      {modal==="new-task"      && <TaskModal data={data} onClose={()=>setModal(null)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:t.status||"todo",done:false}]}));setModal(null);}} />}
       {modal==="view-project"  && selected && <ProjectDetail project={selected} data={data} update={update} onEdit={()=>setModal("edit-project")} onClose={()=>{setModal(null);setSelected(null);}} />}
     </div>
   );
