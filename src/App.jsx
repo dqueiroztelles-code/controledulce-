@@ -41,7 +41,10 @@ async function sbFetch(method, body) {
 }
 async function loadData() {
   try {
-    const res = await sbFetch("GET");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/gestor_data?id=eq.dulce`, { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }, signal: controller.signal });
+    clearTimeout(timeout);
     const rows = await res.json();
     if (rows && rows.length > 0) return rows[0].data;
     return null;
