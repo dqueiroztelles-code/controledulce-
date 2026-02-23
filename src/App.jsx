@@ -122,22 +122,6 @@ function calcReceitaMes(data, m, y) {
   });
   return total;
 }
-  });
-
-  // Soma também projetos com valor próprio (independente de cliente)
-  data.projects.forEach(p => {
-    if (p.status !== "Concluído" || !p.value) return;
-    // Só conta se o cliente não tem valor próprio definido
-    const clientTemValor = data.clients.find(c => c.name === p.client && c.value);
-    if (clientTemValor) return;
-    const d = p.deadline || p.createdAt?.slice(0, 10);
-    if (!d) return;
-    const dt = new Date(d + (d.length === 10 ? "T00:00:00" : ""));
-    if (dt.getMonth() === m && dt.getFullYear() === y) total += parseMoney(p.value);
-  });
-
-  return total;
-}
 
 // Próximos pagamentos a receber
 function getProximosPagamentos(data) {
