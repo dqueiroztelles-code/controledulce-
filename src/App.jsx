@@ -1827,23 +1827,55 @@ function PipelineModal({ initial, onClose, onSave }) {
   );
 }
 
-function TaskModal({ data, onClose, onSave }) {
-  const [f,setF]=useState({title:"",projectId:"",due:""});
+function TaskModal({ data, onClose, onSave, defaultProjectId }) {
+  const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
+  const [f,setF]=useState({title:"",projectId:defaultProjectId||"",due:"",time:"",phase:"",notes:"",status:"todo",checklist:[]});
+  const [newCheck,setNewCheck]=useState("");
   const set=k=>v=>setF(p=>({...p,[k]:v}));
+  const addCheck=()=>{ if(!newCheck.trim()) return; setF(p=>({...p,checklist:[...p.checklist,{id:uid(),text:newCheck.trim(),done:false}]})); setNewCheck(""); };
+  const toggleCheck=id=>setF(p=>({...p,checklist:p.checklist.map(c=>c.id===id?{...c,done:!c.done}:c)}));
+  const removeCheck=id=>setF(p=>({...p,checklist:p.checklist.filter(c=>c.id!==id)}));
   return (
     <Modal title="Nova Tarefa" onClose={onClose}>
       <Input label="Tarefa" value={f.title} onChange={set("title")} required placeholder="O que precisa ser feito?" />
-      <div style={{ marginBottom:14 }}>
-        <label style={{ display:"block", fontSize:12, color:COLORS.textMuted, marginBottom:5, fontWeight:600 }}>Projeto</label>
-        <select value={f.projectId} onChange={e=>set("projectId")(e.target.value)} style={{ width:"100%", padding:"9px 12px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:14, outline:"none", fontFamily:"inherit" }}>
-          <option value="">Nenhum</option>
-          {data.projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+      {!defaultProjectId && (
+        <div style={{ marginBottom:14 }}>
+          <label style={{ display:"block", fontSize:12, color:COLORS.textMuted, marginBottom:5, fontWeight:600 }}>Projeto</label>
+          <select value={f.projectId} onChange={e=>set("projectId")(e.target.value)} style={{ width:"100%", padding:"9px 12px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:14, outline:"none", fontFamily:"inherit" }}>
+            <option value="">Nenhum</option>
+            {data.projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      )}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+        <Input label="Data" value={f.due} onChange={set("due")} type="date" required />
+        <Input label="Horário" value={f.time} onChange={set("time")} type="time" />
+        <div>
+          <label style={{ display:"block", fontSize:12, color:COLORS.textMuted, marginBottom:5, fontWeight:600 }}>Fase</label>
+          <select value={f.phase} onChange={e=>set("phase")(e.target.value)} style={{ width:"100%", padding:"9px 12px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:14, outline:"none", fontFamily:"inherit" }}>
+            <option value="">Sem fase</option>
+            {PHASES.map(p=><option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
       </div>
-      <Input label="Prazo" value={f.due} onChange={set("due")} type="date" />
+      <Input label="Notas internas" value={f.notes} onChange={set("notes")} placeholder="Detalhes, contexto, referências..." />
+      <div style={{ marginBottom:14 }}>
+        <label style={{ display:"block", fontSize:12, color:COLORS.textMuted, marginBottom:8, fontWeight:600 }}>Checklist</label>
+        {f.checklist.map(c=>(
+          <div key={c.id} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+            <input type="checkbox" checked={c.done} onChange={()=>toggleCheck(c.id)} style={{ cursor:"pointer" }} />
+            <span style={{ flex:1, fontSize:13, color:c.done?COLORS.textDim:COLORS.text, textDecoration:c.done?"line-through":"none" }}>{c.text}</span>
+            <button onClick={()=>removeCheck(c.id)} style={{ background:"none", border:"none", color:COLORS.red, cursor:"pointer", fontSize:12 }}>✕</button>
+          </div>
+        ))}
+        <div style={{ display:"flex", gap:8, marginTop:6 }}>
+          <input value={newCheck} onChange={e=>setNewCheck(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addCheck()} placeholder="Adicionar item..." style={{ flex:1, padding:"7px 10px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:13, outline:"none", fontFamily:"inherit" }} />
+          <button onClick={addCheck} style={{ padding:"7px 14px", borderRadius:8, background:COLORS.accentDim, border:"none", color:COLORS.accent, cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit" }}>+</button>
+        </div>
+      </div>
       <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:4 }}>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-        <Btn onClick={()=>f.title&&onSave(f)}>Salvar</Btn>
+        <Btn onClick={()=>f.title&&f.due&&onSave(f)}>Salvar</Btn>
       </div>
     </Modal>
   );
