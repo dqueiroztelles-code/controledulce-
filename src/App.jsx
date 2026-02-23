@@ -254,7 +254,6 @@ export default function App() {
     </div>
   );
 
-  const [showSearch, setShowSearch] = useState(false);
   const tabs = [
     { id:"dashboard", label:"Dashboard" }, { id:"projetos", label:"Projetos" },
     { id:"clientes", label:"Clientes" }, { id:"pipeline", label:"Pipeline" },
@@ -287,7 +286,6 @@ export default function App() {
             {t.label}
           </button>
         ))}
-        <div style={{ padding:"0 12px", marginBottom:8 }}><button onClick={()=>setShowSearch(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:10, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.textMuted, cursor:"pointer", fontSize:13, fontFamily:"inherit" }}><span>🔍</span><span>Buscar...</span></button></div>
         <div style={{ marginTop:"auto", padding:"0 20px", fontSize:11, color:COLORS.textDim }}>
           {data.projects.filter(p=>p.status==="Em andamento").length} projetos ativos · {data.clients.length} clientes
         </div>
@@ -313,47 +311,10 @@ export default function App() {
       {modal==="edit-pipeline" && selected && <PipelineModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={p=>{update(d=>({...d,pipeline:d.pipeline.map(x=>x.id===selected.id?{...x,...p}:x)}));setModal(null);setSelected(null);}} />}
       {modal==="new-task"      && <TaskModal data={data} onClose={()=>setModal(null)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:t.status||"todo",done:false}]}));setModal(null);}} />}
       {modal==="view-project"  && selected && <ProjectDetail project={selected} data={data} update={update} onEdit={()=>setModal("edit-project")} onClose={()=>{setModal(null);setSelected(null);}} />}
-      {showSearch && <SearchModal data={data} onClose={()=>setShowSearch(false)} onNavigate={tab=>{ setTab(tab); setShowSearch(false); }} />}
     </div>
   );
 }
 
-function SearchModal({ data, onClose, onNavigate }) {
-  const [q,setQ] = useState("");
-  const ref = React.useRef();
-  React.useEffect(()=>{ if(ref.current) ref.current.focus(); },[]);
-  const ql = q.toLowerCase();
-  const results = q.trim().length < 2 ? [] : [
-    ...data.tasks.filter(t=>t.title&&t.title.toLowerCase().includes(ql)).map(t=>({ label:t.title, sub:t.phase||"Sem fase", tab:"tarefas" })),
-    ...data.projects.filter(p=>p.name&&p.name.toLowerCase().includes(ql)).map(p=>({ label:p.name, sub:p.client||"", tab:"projetos" })),
-    ...data.clients.filter(c=>c.name&&c.name.toLowerCase().includes(ql)).map(c=>({ label:c.name, sub:c.segment||"", tab:"clientes" })),
-    ...(data.pipeline||[]).filter(p=>p.name&&p.name.toLowerCase().includes(ql)).map(p=>({ label:p.name, sub:p.stage||"", tab:"pipeline" })),
-  ].slice(0,8);
-  return (
-    <div onClick={onClose} style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.7)", zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:120 }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:"90%", maxWidth:560, background:COLORS.surface, borderRadius:16, border:"1px solid "+COLORS.border, overflow:"hidden" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12, padding:"16px 20px", borderBottom:"1px solid "+COLORS.border }}>
-          <span>🔍</span>
-          <input ref={ref} value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Escape") onClose(); }} placeholder="Buscar tarefas, projetos, clientes..." style={{ flex:1, background:"none", border:"none", outline:"none", fontSize:15, color:COLORS.text, fontFamily:"inherit" }} />
-          <button onClick={onClose} style={{ fontSize:11, padding:"2px 8px", borderRadius:4, background:COLORS.bg, border:"1px solid "+COLORS.border, color:COLORS.textMuted, cursor:"pointer", fontFamily:"inherit" }}>ESC</button>
-        </div>
-        <div style={{ maxHeight:400, overflowY:"auto" }}>
-          {q.trim().length < 2 && <div style={{ padding:24, textAlign:"center", color:COLORS.textDim, fontSize:13 }}>Digite pelo menos 2 caracteres</div>}
-          {q.trim().length >= 2 && results.length===0 && <div style={{ padding:24, textAlign:"center", color:COLORS.textDim, fontSize:13 }}>Nenhum resultado</div>}
-          {results.map((r,i)=>(
-            <div key={i} onClick={()=>onNavigate(r.tab)} className="hrow" style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 20px", cursor:"pointer", borderBottom:"1px solid "+COLORS.border }}>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, fontWeight:600 }}>{r.label}</div>
-                <div style={{ fontSize:12, color:COLORS.textMuted }}>{r.sub}</div>
-              </div>
-              <span style={{ fontSize:11, color:COLORS.textDim }}>{r.tab} →</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 function TaskRow({ task, data, update, highlight }) {
   const proj = data.projects.find(p=>p.id===task.projectId);
   return (
