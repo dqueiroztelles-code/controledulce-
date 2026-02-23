@@ -909,12 +909,25 @@ function Tarefas({ data, update }) {
   const [show, setShow] = useState(false);
   const [projFiltro, setProjFiltro] = useState("todos");
   const [dragging, setDragging] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
   const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
   const PHASE_COLORS = { "Imersão":COLORS.blue, "Estratégia":COLORS.accent, "Criação":COLORS.yellow, "Refinamento":COLORS.green, "Entrega":COLORS.textMuted };
 
   const moveTask = (taskId, status) => {
     update(d => ({ ...d, tasks: d.tasks.map(t => t.id !== taskId ? t : { ...t, status, done: status==="done" }) }));
+  };
+  const reorderTask = (dragId, overId) => {
+    if (dragId === overId) return;
+    update(d => {
+      const tasks = [...d.tasks];
+      const dragIdx = tasks.findIndex(t => t.id === dragId);
+      const overIdx = tasks.findIndex(t => t.id === overId);
+      if (dragIdx === -1 || overIdx === -1) return d;
+      const [removed] = tasks.splice(dragIdx, 1);
+      tasks.splice(overIdx, 0, removed);
+      return { ...d, tasks };
+    });
   };
 
   const projetos = [
@@ -931,11 +944,15 @@ function Tarefas({ data, update }) {
     const proj = data.projects.find(p => p.id === t.projectId);
     const late = isOverdue(t.due);
     const status = t.status || (t.done ? "done" : t.inProgress ? "progress" : "todo");
+    const isOver = dragOver === t.id && dragging !== t.id;
     return (
       <div
         draggable
-        onDragStart={() => setDragging(t.id)}
-        style={{ background:COLORS.bg, border:`1px solid ${late?COLORS.red:COLORS.border}`, borderRadius:10, padding:"12px 14px", cursor:"grab", marginBottom:8 }}
+        onDragStart={() => { setDragging(t.id); }}
+        onDragEnd={() => { setDragging(null); setDragOver(null); }}
+        onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOver(t.id); }}
+        onDrop={e => { e.preventDefault(); e.stopPropagation(); if(dragging && dragging!==t.id) reorderTask(dragging, t.id); setDragging(null); setDragOver(null); }}
+        style={{ background:COLORS.bg, border:`2px solid ${isOver?COLORS.accent:late?COLORS.red:COLORS.border}`, borderRadius:10, padding:"12px 14px", cursor:"grab", marginBottom:8, transition:"border 0.15s", opacity:dragging===t.id?0.5:1 }}
       >
         <div style={{ fontWeight:600, fontSize:13, marginBottom:6, color:status==="done"?COLORS.textDim:COLORS.text, textDecoration:status==="done"?"line-through":"none" }}>{t.title}</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
