@@ -315,7 +315,6 @@ export default function App() {
       {modal==="edit-pipeline" && selected && <PipelineModal initial={selected} onClose={()=>{setModal(null);setSelected(null);}} onSave={p=>{update(d=>({...d,pipeline:d.pipeline.map(x=>x.id===selected.id?{...x,...p}:x)}));setModal(null);setSelected(null);}} />}
       {modal==="new-task"      && <TaskModal data={data} onClose={()=>setModal(null)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:t.status||"todo",done:false}]}));setModal(null);}} />}
       {modal==="view-project"  && selected && <ProjectDetail project={selected} data={data} update={update} onEdit={()=>setModal("edit-project")} onClose={()=>{setModal(null);setSelected(null);}} />}
-      {showSearch && <SearchModal data={data} onClose={()=>setShowSearch(false)} onNavigate={(tab)=>{ setTab(tab); setShowSearch(false); }} />}
     </div>
   );
 }
