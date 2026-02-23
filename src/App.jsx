@@ -254,6 +254,7 @@ export default function App() {
     </div>
   );
 
+  const [showSearch, setShowSearch] = useState(false);
   const tabs = [
     { id:"dashboard", label:"Dashboard" }, { id:"projetos", label:"Projetos" },
     { id:"clientes", label:"Clientes" }, { id:"pipeline", label:"Pipeline" },
@@ -286,6 +287,9 @@ export default function App() {
             {t.label}
           </button>
         ))}
+        <div style={{ padding:"0 12px", marginBottom:8 }}>
+          <button onClick={()=>setShowSearch(true)} style={{ width:"100%", display:"flex", alignItems:"center", gap:8, padding:"9px 12px", borderRadius:10, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.textMuted, cursor:"pointer", fontSize:13, fontFamily:"inherit" }}><span>🔍</span><span>Buscar...</span><span style={{ marginLeft:"auto", fontSize:10, opacity:0.5 }}>⌘K</span></button>
+        </div>
         <div style={{ marginTop:"auto", padding:"0 20px", fontSize:11, color:COLORS.textDim }}>
           {data.projects.filter(p=>p.status==="Em andamento").length} projetos ativos · {data.clients.length} clientes
         </div>
@@ -329,6 +333,43 @@ function TaskRow({ task, data, update, highlight }) {
   );
 }
 
+function SearchModal({ data, onClose, onNavigate }) {
+  const [q, setQ] = useState("");
+  const ref = React.useRef();
+  React.useEffect(()=>{ ref.current?.focus(); },[]);
+  const results = q.trim().length < 2 ? [] : [
+    ...data.tasks.filter(t=>t.title?.toLowerCase().includes(q.toLowerCase())).map(t=>({ type:"Tarefa", icon:"✓", label:t.title, sub:t.phase||"Sem fase", tab:"tarefas" })),
+    ...data.projects.filter(p=>p.name?.toLowerCase().includes(q.toLowerCase())||p.client?.toLowerCase().includes(q.toLowerCase())).map(p=>({ type:"Projeto", icon:"📁", label:p.name, sub:p.client||"", tab:"projetos" })),
+    ...data.clients.filter(c=>c.name?.toLowerCase().includes(q.toLowerCase())||c.segment?.toLowerCase().includes(q.toLowerCase())).map(c=>({ type:"Cliente", icon:"👤", label:c.name, sub:c.segment||"", tab:"clientes" })),
+    ...(data.calEvents||[]).filter(e=>e.title?.toLowerCase().includes(q.toLowerCase())).map(e=>({ type:"Evento", icon:"📅", label:e.title, sub:e.date||"", tab:"calendario" })),
+    ...(data.pipeline||[]).filter(p=>p.name?.toLowerCase().includes(q.toLowerCase())).map(p=>({ type:"Pipeline", icon:"🎯", label:p.name, sub:p.stage||"", tab:"pipeline" })),
+  ].slice(0, 8);
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:120 }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:560, background:COLORS.surface, borderRadius:16, border:`1px solid ${COLORS.border}`, overflow:"hidden", boxShadow:"0 24px 48px rgba(0,0,0,0.5)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, padding:"16px 20px", borderBottom:`1px solid ${COLORS.border}` }}>
+          <span style={{ fontSize:18 }}>🔍</span>
+          <input ref={ref} value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==="Escape"&&onClose()} placeholder="Buscar tarefas, projetos, clientes, eventos..." style={{ flex:1, background:"none", border:"none", outline:"none", fontSize:15, color:COLORS.text, fontFamily:"inherit" }} />
+          <kbd onClick={onClose} style={{ fontSize:11, padding:"2px 6px", borderRadius:4, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.textMuted, cursor:"pointer" }}>ESC</kbd>
+        </div>
+        <div style={{ maxHeight:400, overflowY:"auto" }}>
+          {q.trim().length < 2 && <div style={{ padding:24, textAlign:"center", color:COLORS.textDim, fontSize:13 }}>Digite pelo menos 2 caracteres para buscar</div>}
+          {q.trim().length >= 2 && results.length === 0 && <div style={{ padding:24, textAlign:"center", color:COLORS.textDim, fontSize:13 }}>Nenhum resultado encontrado</div>}
+          {results.map((r,i) => (
+            <div key={i} onClick={()=>onNavigate(r.tab)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 20px", cursor:"pointer", borderBottom:`1px solid ${COLORS.border}`, transition:"background 0.1s" }} className="hrow">
+              <span style={{ fontSize:18 }}>{r.icon}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:600 }}>{r.label}</div>
+                <div style={{ fontSize:12, color:COLORS.textMuted }}>{r.type}{r.sub?" · "+r.sub:""}</div>
+              </div>
+              <span style={{ fontSize:11, color:COLORS.textDim }}>ir para {r.tab} →</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 // ---- DASHBOARD ----
 function Dashboard({ data, setModal, setSelected, update, receitaMes, proximosPag }) {
   const today   = data.tasks.filter(t=>!t.done&&isToday(t.due));
