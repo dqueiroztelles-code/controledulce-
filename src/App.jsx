@@ -939,6 +939,8 @@ function Tarefas({ data, update }) {
       >
         <div style={{ fontWeight:600, fontSize:13, marginBottom:6, color:status==="done"?COLORS.textDim:COLORS.text, textDecoration:status==="done"?"line-through":"none" }}>{t.title}</div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
+          {t.priority==="Alta" && <Badge label="🔴 Alta" color={COLORS.red} bg={COLORS.redDim} />}
+          {t.priority==="Baixa" && <Badge label="🟢 Baixa" color={COLORS.green} bg={COLORS.greenDim} />}
           {showPhase && t.phase && <Badge label={t.phase} color={PHASE_COLORS[t.phase]||COLORS.accent} bg={(PHASE_COLORS[t.phase]||COLORS.accent)+"22"} />}
           {projFiltro==="todos" && proj && <Badge label={proj.name} color={COLORS.accent} bg={COLORS.accentDim} />}
         </div>
