@@ -1507,13 +1507,14 @@ function Calendario({ data, update }) {
 }
 
 function EventModal({ initial, defaultDate, onClose, onSave }) {
-  const [f,setF] = useState({ title:"", date:defaultDate||new Date().toISOString().slice(0,10), type:"reuniao", notes:"", client:"", ...initial });
+  const [f,setF] = useState({ title:"", date:defaultDate||new Date().toISOString().slice(0,10), time:"", type:"reuniao", notes:"", client:"", ...initial });
   const set = k => v => setF(p=>({...p,[k]:v}));
   return (
     <Modal title={initial?"Editar Evento":"Novo Evento"} onClose={onClose}>
       <Input label="Título" value={f.title} onChange={set("title")} required placeholder="Ex: Reunião Baby Home, Entrega Colorato..." />
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
         <Input label="Data" value={f.date} onChange={set("date")} type="date" required />
+        <Input label="Horário" value={f.time} onChange={set("time")} type="time" />
         <Input label="Tipo" value={f.type} onChange={set("type")} options={["entrega","reuniao","marco","pagamento","pessoal"]} />
       </div>
       <Input label="Cliente / Contexto" value={f.client} onChange={set("client")} placeholder="Ex: Baby Home" />
