@@ -923,11 +923,9 @@ function Tarefas({ data, update }) {
     { id:"sem-projeto", name:"Sem Projeto" },
   ];
 
-  const tarefasFiltradas = projFiltro === "todos"
-    ? data.tasks
-    : projFiltro === "sem-projeto"
-    ? data.tasks.filter(t => !t.projectId)
-    : data.tasks.filter(t => t.projectId === projFiltro);
+  const PRIORITY_ORDER = {"Alta":0,"Media":1,"Baixa":2};
+  const sortByPriority = (tasks) => [...tasks].sort((a,b) => (PRIORITY_ORDER[a.priority]??1) - (PRIORITY_ORDER[b.priority]??1));
+  const tarefasFiltradas = sortByPriority(projFiltro === "todos" ? data.tasks : projFiltro === "sem-projeto" ? data.tasks.filter(t => !t.projectId) : data.tasks.filter(t => t.projectId === projFiltro));
 
   const TaskCard = ({ t, showPhase }) => {
     const proj = data.projects.find(p => p.id === t.projectId);
@@ -1883,7 +1881,7 @@ function PipelineModal({ initial, onClose, onSave }) {
 
 function TaskModal({ data, onClose, onSave, defaultProjectId, initial }) {
   const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
-  const [f,setF]=useState({title:"",projectId:defaultProjectId||"",due:"",time:"",phase:"",notes:"",status:"todo",checklist:[],...(initial||{})});
+  const [f,setF]=useState({title:"",projectId:defaultProjectId||"",due:"",time:"",phase:"",notes:"",status:"todo",priority:"Media",checklist:[],...(initial||{})});
   const [newCheck,setNewCheck]=useState("");
   const set=k=>v=>setF(p=>({...p,[k]:v}));
   const addCheck=()=>{ if(!newCheck.trim()) return; setF(p=>({...p,checklist:[...p.checklist,{id:uid(),text:newCheck.trim(),done:false}]})); setNewCheck(""); };
@@ -1912,6 +1910,7 @@ function TaskModal({ data, onClose, onSave, defaultProjectId, initial }) {
           </select>
         </div>
       </div>
+      <div style={{ marginBottom:14 }}><label style={{ display:"block", fontSize:12, color:COLORS.textMuted, marginBottom:5, fontWeight:600 }}>Prioridade</label><select value={f.priority} onChange={e=>set("priority")(e.target.value)} style={{ width:"100%", padding:"9px 12px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:14, outline:"none", fontFamily:"inherit" }}><option value="Alta">🔴 Alta</option><option value="Media">🟡 Média</option><option value="Baixa">🟢 Baixa</option></select></div>
       <Input label="Notas internas" value={f.notes} onChange={set("notes")} placeholder="Detalhes, contexto, referências..." />
       <div style={{ marginBottom:14 }}>
         <label style={{ display:"block", fontSize:12, color:COLORS.textMuted, marginBottom:8, fontWeight:600 }}>Checklist</label>
