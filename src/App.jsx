@@ -909,6 +909,7 @@ function Tarefas({ data, update }) {
   const [show, setShow] = useState(false);
   const [projFiltro, setProjFiltro] = useState("todos");
   const [dragging, setDragging] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
   const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
   const PHASE_COLORS = { "Imersão":COLORS.blue, "Estratégia":COLORS.accent, "Criação":COLORS.yellow, "Refinamento":COLORS.green, "Entrega":COLORS.textMuted };
 
@@ -945,7 +946,10 @@ function Tarefas({ data, update }) {
         </div>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           {t.due && <span style={{ fontSize:11, color:late?COLORS.red:COLORS.textDim }}>{late?"⚠ ":""}{fmt(t.due)}</span>}
-          <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+          <div style={{ display:"flex", gap:4 }}>
+            <Btn small variant="ghost" onClick={()=>setEditingTask(t)} style={{ padding:"2px 6px", fontSize:10 }}>✏️</Btn>
+            <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+          </div>
         </div>
         <div style={{ display:"flex", gap:4, marginTop:8 }}>
           {status!=="todo"     && <button onClick={()=>moveTask(t.id,"todo")}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.border, border:"none", color:COLORS.textMuted, cursor:"pointer", fontFamily:"inherit" }}>← A Fazer</button>}
@@ -1048,6 +1052,7 @@ function Tarefas({ data, update }) {
         <VisaoProjeto projectId={projFiltro} />
       )}
       {show&&<TaskModal data={data} onClose={()=>setShow(false)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:"todo",done:false}]}));setShow(false);}} />}
+      {editingTask&&<TaskModal data={data} initial={editingTask} onClose={()=>setEditingTask(null)} onSave={t=>{update(d=>({...d,tasks:d.tasks.map(x=>x.id===editingTask.id?{...x,...t}:x)}));setEditingTask(null);}} />}
     </div>
   );
 }
