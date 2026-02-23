@@ -1916,7 +1916,7 @@ function TaskModal({ data, onClose, onSave, defaultProjectId, initial }) {
       </div>
       <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:4 }}>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-        <Btn onClick={()=>f.title&&f.due&&onSave(f)}>Salvar</Btn>
+        <Btn onClick={()=>{ if(!f.title){alert("Digite o título da tarefa");return;} onSave(f); }}>Salvar</Btn>
       </div>
     </Modal>
   );
