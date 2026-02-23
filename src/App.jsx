@@ -625,30 +625,68 @@ function Projetos({ data, setModal, setSelected, update }) {
 }
 
 function ProjectDetail({ project, data, update, onEdit, onClose }) {
-  const [newTask,setNewTask]=useState(""); const [taskDue,setTaskDue]=useState("");
-  const tasks=data.tasks.filter(t=>t.projectId===project.id);
-  const add=()=>{ if(!newTask.trim())return; update(d=>({...d,tasks:[...d.tasks,{id:uid(),title:newTask,due:taskDue||null,projectId:project.id,done:false}]})); setNewTask("");setTaskDue(""); };
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const tasks = data.tasks.filter(t => t.projectId === project.id);
+  const done = tasks.filter(t => t.status==="done" || t.done).length;
   return (
     <Modal title={project.name} onClose={onClose}>
       <div style={{ marginBottom:16 }}>
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}><Pill status={project.status} /><Pill status={project.priority} />{project.deadline&&<Badge label={`Prazo: ${fmt(project.deadline)}`} color={isOverdue(project.deadline)?COLORS.red:COLORS.textMuted} bg={isOverdue(project.deadline)?COLORS.redDim:COLORS.border} />}</div>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+          <Pill status={project.status} />
+          <Pill status={project.priority} />
+          {project.deadline&&<Badge label={`Prazo: ${fmt(project.deadline)}`} color={isOverdue(project.deadline)?COLORS.red:COLORS.textMuted} bg={isOverdue(project.deadline)?COLORS.redDim:COLORS.border} />}
+        </div>
         {project.client&&<div style={{ fontSize:13, color:COLORS.textMuted }}>Cliente: {project.client}</div>}
         {project.value&&<div style={{ fontSize:14, color:COLORS.green, fontFamily:"'DM Mono',monospace", marginTop:4 }}>R$ {fmtMoney(project.value)}</div>}
         {project.notes&&<div style={{ fontSize:13, color:COLORS.textMuted, marginTop:10, lineHeight:1.6 }}>{project.notes}</div>}
       </div>
       <div style={{ borderTop:`1px solid ${COLORS.border}`, paddingTop:16, marginBottom:16 }}>
-        <div style={{ fontWeight:700, marginBottom:12 }}>Tarefas ({tasks.length})</div>
-        {tasks.map(t=><TaskRow key={t.id} task={t} data={data} update={update} />)}
-        <div style={{ display:"flex", gap:8, marginTop:10 }}>
-          <input value={newTask} onChange={e=>setNewTask(e.target.value)} onKeyDown={e=>e.key==="Enter"&&add()} placeholder="Nova tarefa..." style={{ flex:1, padding:"8px 12px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:13, outline:"none", fontFamily:"inherit" }} />
-          <input type="date" value={taskDue} onChange={e=>setTaskDue(e.target.value)} style={{ padding:"8px", borderRadius:8, background:COLORS.bg, border:`1px solid ${COLORS.border}`, color:COLORS.text, fontSize:12, outline:"none" }} />
-          <Btn small onClick={add}>+</Btn>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+          <div style={{ fontWeight:700 }}>Tarefas ({done}/{tasks.length})</div>
+          <Btn small onClick={()=>setShowTaskModal(true)}>+ Nova Tarefa</Btn>
         </div>
+        {tasks.length===0 && <div style={{ color:COLORS.textDim, fontSize:13, textAlign:"center", padding:16 }}>Nenhuma tarefa ainda</div>}
+        {tasks.map(t => {
+          const late = isOverdue(t.due);
+          const status = t.status || (t.done?"done":"todo");
+          const checkDone = (t.checklist||[]).filter(c=>c.done).length;
+          const checkTotal = (t.checklist||[]).length;
+          return (
+            <div key={t.id} style={{ background:COLORS.bg, border:`1px solid ${late?COLORS.red:COLORS.border}`, borderRadius:10, padding:"10px 14px", marginBottom:8 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                <div style={{ fontWeight:600, fontSize:13, color:status==="done"?COLORS.textDim:COLORS.text, textDecoration:status==="done"?"line-through":"none", flex:1 }}>{t.title}</div>
+                <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+              </div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:6, alignItems:"center" }}>
+                {t.phase && <Badge label={t.phase} color={COLORS.accent} bg={COLORS.accentDim} />}
+                {t.due && <span style={{ fontSize:11, color:late?COLORS.red:COLORS.textDim }}>{late?"⚠ ":""}{fmt(t.due)}{t.time?" · "+t.time:""}</span>}
+                {checkTotal>0 && <span style={{ fontSize:11, color:COLORS.textMuted }}>{checkDone}/{checkTotal} itens</span>}
+              </div>
+              {t.notes && <div style={{ fontSize:12, color:COLORS.textDim, marginTop:6 }}>{t.notes}</div>}
+              {(t.checklist||[]).length>0 && (
+                <div style={{ marginTop:8 }}>
+                  {t.checklist.map(c=>(
+                    <div key={c.id} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                      <input type="checkbox" checked={c.done} onChange={()=>update(d=>({...d,tasks:d.tasks.map(x=>x.id!==t.id?x:{...x,checklist:x.checklist.map(ch=>ch.id===c.id?{...ch,done:!ch.done}:ch)})}))} style={{ cursor:"pointer" }} />
+                      <span style={{ fontSize:12, color:c.done?COLORS.textDim:COLORS.text, textDecoration:c.done?"line-through":"none" }}>{c.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display:"flex", gap:4, marginTop:8 }}>
+                {status!=="todo"     && <button onClick={()=>update(d=>({...d,tasks:d.tasks.map(x=>x.id!==t.id?x:{...x,status:"todo",done:false})}))}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.border, border:"none", color:COLORS.textMuted, cursor:"pointer", fontFamily:"inherit" }}>← A Fazer</button>}
+                {status!=="progress" && <button onClick={()=>update(d=>({...d,tasks:d.tasks.map(x=>x.id!==t.id?x:{...x,status:"progress",done:false})}))} style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.yellowDim, border:"none", color:COLORS.yellow, cursor:"pointer", fontFamily:"inherit" }}>→ Em Progresso</button>}
+                {status!=="done"     && <button onClick={()=>update(d=>({...d,tasks:d.tasks.map(x=>x.id!==t.id?x:{...x,status:"done",done:true})}))}     style={{ flex:1, fontSize:10, padding:"4px", borderRadius:6, background:COLORS.greenDim, border:"none", color:COLORS.green, cursor:"pointer", fontFamily:"inherit" }}>✓ Feito</button>}
+              </div>
+            </div>
+          );
+        })}
       </div>
       <div style={{ display:"flex", gap:8 }}>
         <Btn onClick={onEdit}>Editar</Btn>
         <Btn variant="danger" onClick={()=>{update(d=>({...d,projects:d.projects.filter(x=>x.id!==project.id)}));onClose();}}>Excluir</Btn>
       </div>
+      {showTaskModal && <TaskModal data={data} defaultProjectId={project.id} onClose={()=>setShowTaskModal(false)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:t.status||"todo",done:false}]}));setShowTaskModal(false);}} />}
     </Modal>
   );
 }
