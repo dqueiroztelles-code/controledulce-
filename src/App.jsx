@@ -105,38 +105,23 @@ const isToday = (d) => d && new Date(d + "T00:00:00").toDateString() === new Dat
 
 // Calcula receita do mês atual baseado no tipo de cliente
 function calcReceitaMes(data, m, y) {
-  const now = new Date();
-  const isCurrentMonth = m === now.getMonth() && y === now.getFullYear();
   let total = 0;
-
   data.clients.forEach(c => {
-    if (!c.value) return;
-    const val = parseMoney(c.value);
-
     if (c.type === "Fixo") {
-      // Recorrente: conta todo mês
-      total += val;
-    } else if (c.type === "Por Projeto") {
-      // Conta projetos concluídos do cliente no mês
-      const projsMes = data.projects.filter(p => {
-        if (p.client !== c.name || p.status !== "Concluído") return false;
-        const d = p.deadline || p.createdAt?.slice(0, 10);
-        if (!d) return false;
-        const dt = new Date(d + (d.length === 10 ? "T00:00:00" : ""));
-        return dt.getMonth() === m && dt.getFullYear() === y;
+      total += parseMoney(c.value || 0);
+    } else {
+      if (!c.parcelas_det) return;
+      c.parcelas_det.forEach(p => {
+        if (!p.vencimento) return;
+        const dt = new Date(p.vencimento + "T00:00:00");
+        if (dt.getMonth() === m && dt.getFullYear() === y) {
+          total += parseMoney(p.valor || 0);
+        }
       });
-      total += projsMes.length * val;
-    } else if (c.type === "Por Ciclo") {
-      // Conta se tem projeto concluído no mês
-      const hasMes = data.projects.some(p => {
-        if (p.client !== c.name || p.status !== "Concluído") return false;
-        const d = p.deadline || p.createdAt?.slice(0, 10);
-        if (!d) return false;
-        const dt = new Date(d + (d.length === 10 ? "T00:00:00" : ""));
-        return dt.getMonth() === m && dt.getFullYear() === y;
-      });
-      if (hasMes) total += val;
     }
+  });
+  return total;
+}
   });
 
   // Soma também projetos com valor próprio (independente de cliente)
