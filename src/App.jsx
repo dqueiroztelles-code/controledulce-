@@ -626,6 +626,7 @@ function Projetos({ data, setModal, setSelected, update }) {
 
 function ProjectDetail({ project, data, update, onEdit, onClose }) {
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const tasks = data.tasks.filter(t => t.projectId === project.id);
   const done = tasks.filter(t => t.status==="done" || t.done).length;
   return (
@@ -655,7 +656,10 @@ function ProjectDetail({ project, data, update, onEdit, onClose }) {
             <div key={t.id} style={{ background:COLORS.bg, border:`1px solid ${late?COLORS.red:COLORS.border}`, borderRadius:10, padding:"10px 14px", marginBottom:8 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                 <div style={{ fontWeight:600, fontSize:13, color:status==="done"?COLORS.textDim:COLORS.text, textDecoration:status==="done"?"line-through":"none", flex:1 }}>{t.title}</div>
-                <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+                <div style={{display:"flex",gap:4}}>
+                  <Btn small variant="ghost" onClick={()=>{setEditingTask(t);setShowTaskModal(true);}} style={{ padding:"2px 6px", fontSize:10 }}>✏️</Btn>
+                  <Btn small variant="danger" onClick={()=>update(d=>({...d,tasks:d.tasks.filter(x=>x.id!==t.id)}))} style={{ padding:"2px 6px", fontSize:10 }}>✕</Btn>
+                </div>
               </div>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:6, alignItems:"center" }}>
                 {t.phase && <Badge label={t.phase} color={COLORS.accent} bg={COLORS.accentDim} />}
@@ -686,7 +690,14 @@ function ProjectDetail({ project, data, update, onEdit, onClose }) {
         <Btn onClick={onEdit}>Editar</Btn>
         <Btn variant="danger" onClick={()=>{update(d=>({...d,projects:d.projects.filter(x=>x.id!==project.id)}));onClose();}}>Excluir</Btn>
       </div>
-      {showTaskModal && <TaskModal data={data} defaultProjectId={project.id} onClose={()=>setShowTaskModal(false)} onSave={t=>{update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:t.status||"todo",done:false}]}));setShowTaskModal(false);}} />}
+      {showTaskModal && <TaskModal data={data} defaultProjectId={project.id} initial={editingTask} onClose={()=>{setShowTaskModal(false);setEditingTask(null);}} onSave={t=>{
+        if(editingTask) {
+          update(d=>({...d,tasks:d.tasks.map(x=>x.id===editingTask.id?{...x,...t}:x)}));
+        } else {
+          update(d=>({...d,tasks:[...d.tasks,{...t,id:uid(),status:t.status||"todo",done:false}]}));
+        }
+        setShowTaskModal(false);setEditingTask(null);
+      }} />}
     </Modal>
   );
 }
@@ -1865,16 +1876,16 @@ function PipelineModal({ initial, onClose, onSave }) {
   );
 }
 
-function TaskModal({ data, onClose, onSave, defaultProjectId }) {
+function TaskModal({ data, onClose, onSave, defaultProjectId, initial }) {
   const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
-  const [f,setF]=useState({title:"",projectId:defaultProjectId||"",due:"",time:"",phase:"",notes:"",status:"todo",checklist:[]});
+  const [f,setF]=useState({title:"",projectId:defaultProjectId||"",due:"",time:"",phase:"",notes:"",status:"todo",checklist:[],...(initial||{})});
   const [newCheck,setNewCheck]=useState("");
   const set=k=>v=>setF(p=>({...p,[k]:v}));
   const addCheck=()=>{ if(!newCheck.trim()) return; setF(p=>({...p,checklist:[...p.checklist,{id:uid(),text:newCheck.trim(),done:false}]})); setNewCheck(""); };
   const toggleCheck=id=>setF(p=>({...p,checklist:p.checklist.map(c=>c.id===id?{...c,done:!c.done}:c)}));
   const removeCheck=id=>setF(p=>({...p,checklist:p.checklist.filter(c=>c.id!==id)}));
   return (
-    <Modal title="Nova Tarefa" onClose={onClose}>
+    <Modal title={initial?"Editar Tarefa":"Nova Tarefa"} onClose={onClose}>
       <Input label="Tarefa" value={f.title} onChange={set("title")} required placeholder="O que precisa ser feito?" />
       {!defaultProjectId && (
         <div style={{ marginBottom:14 }}>
