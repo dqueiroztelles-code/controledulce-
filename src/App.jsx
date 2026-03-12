@@ -880,7 +880,7 @@ function Tarefas({ data, update }) {
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
-  const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
+  const PHASES = ["Imersão","Estratégia","Criação","Execução","Refinamento","Entrega"];
   const PHASE_COLORS = { "Imersão":COLORS.blue, "Estratégia":COLORS.accent, "Criação":COLORS.yellow, "Refinamento":COLORS.green, "Entrega":COLORS.textMuted };
 
   const moveTask = (taskId, status) => {
@@ -1868,7 +1868,7 @@ function PipelineModal({ initial, onClose, onSave }) {
 }
 
 function TaskModal({ data, onClose, onSave, defaultProjectId, initial }) {
-  const PHASES = ["Imersão","Estratégia","Criação","Refinamento","Entrega"];
+  const PHASES = ["Imersão","Estratégia","Criação","Execução","Refinamento","Entrega"];
   const [f,setF]=useState({title:"",projectId:defaultProjectId||"",due:"",time:"",phase:"",notes:"",status:"todo",priority:"Media",checklist:[],...(initial||{})});
   const [newCheck,setNewCheck]=useState("");
   const set=k=>v=>setF(p=>({...p,[k]:v}));
