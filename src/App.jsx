@@ -8,9 +8,9 @@ const COLORS = {
   text: "#f1f1f5", textMuted: "#888899", textDim: "#555566",
 };
 
-const PIPELINE_STAGES = ["Prospecção", "Proposta Enviada", "Negociação", "Fechado", "Perdido"];
+const PIPELINE_STAGES = ["Mapeamento", "Dossiê", "Primeiro Contato", "Reunião", "Proposta Enviada", "Negociação", "Fechado", "Perdido"];
 const PIPELINE_COLORS = {
-  "Prospecção": COLORS.blue, "Proposta Enviada": COLORS.yellow,
+  "Mapeamento": COLORS.blue, "Dossiê": COLORS.blue, "Primeiro Contato": COLORS.blue, "Reunião": COLORS.accent, "Proposta Enviada": COLORS.yellow,
   "Negociação": COLORS.accent, "Fechado": COLORS.green, "Perdido": COLORS.red,
 };
 const PROJECT_STATUS = ["Em andamento", "Pausado", "Concluído"];
